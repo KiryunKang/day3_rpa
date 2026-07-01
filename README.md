@@ -1,7 +1,31 @@
 # 공공 직군 행정업무 슈퍼앱
 
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![uv](https://img.shields.io/badge/uv-managed-DE5FE9?logo=uv&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-3.53-003B57?logo=sqlite&logoColor=white)
+![Claude](https://img.shields.io/badge/Claude-Opus%204.8-D97757?logo=anthropic&logoColor=white)
+
 공공 직군의 행정업무를 지원하는 슈퍼앱입니다. 기획/설계 문서는 [`docs/`](docs/)를 참고하세요
 (종합 대시보드: `docs/index.html`).
+
+## 스크린샷
+
+<img src="docs/screenshots/schedule.png" alt="팀 스케줄 - 월간 캘린더" width="100%" />
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/excel.png" alt="엑셀 자동화" /><br/><sub><b>엑셀 자동화</b> — 컬럼 기준 분할 / 병합</sub></td>
+    <td width="50%"><img src="docs/screenshots/chatbot.png" alt="민원 챗봇" /><br/><sub><b>민원 챗봇</b> — 매뉴얼 근거 응대 생성</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/news.png" alt="뉴스 수집" /><br/><sub><b>뉴스 수집</b> — 키워드 기반 RSS 수집</sub></td>
+    <td width="50%"><img src="docs/screenshots/approval.png" alt="전자결재" /><br/><sub><b>전자결재</b> — 순차 결재선 기안/승인</sub></td>
+  </tr>
+</table>
 
 ## 기능
 
