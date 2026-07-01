@@ -58,6 +58,14 @@ export const SCHEDULE_LABEL: Record<ScheduleType, string> = {
   etc: '기타',
 }
 
+export interface Member {
+  id: number
+  name: string
+  team: string
+  role: string
+  created_at: string
+}
+
 export const SCHEDULE_COLOR: Record<ScheduleType, string> = {
   vacation: '#16a34a',
   work: '#2563eb',

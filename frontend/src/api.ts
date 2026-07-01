@@ -5,6 +5,7 @@ import type {
   DocumentSummary,
   ExcelPreview,
   Manual,
+  Member,
   NewsArticle,
   ScheduleEvent,
   SystemStatus,
@@ -101,6 +102,19 @@ export const scheduleApi = {
     request<ScheduleEvent>(`/api/schedule/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   remove: (id: number) =>
     fetch(`/api/schedule/${id}`, { method: 'DELETE' }).then(async (r) => {
+      if (!r.ok) throw new Error(await errorMessage(r))
+    }),
+}
+
+// ---------- 팀원 ----------
+export const memberApi = {
+  list: () => request<Member[]>('/api/members'),
+  create: (body: { name: string; team: string; role: string }) =>
+    request<Member>('/api/members', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id: number, body: { name: string; team: string; role: string }) =>
+    request<Member>(`/api/members/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  remove: (id: number) =>
+    fetch(`/api/members/${id}`, { method: 'DELETE' }).then(async (r) => {
       if (!r.ok) throw new Error(await errorMessage(r))
     }),
 }

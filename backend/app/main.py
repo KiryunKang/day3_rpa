@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from app.db import db_status, get_connection, init_db
 from app.documents import router as documents_router
 from app.schedule import router as schedule_router
+from app.members import router as members_router
 from app.excel import router as excel_router
 from app.chatbot import router as chatbot_router
 from app.news import router as news_router
@@ -45,6 +46,7 @@ app.add_middleware(
 # 기능 라우터 등록
 app.include_router(documents_router)  # 전자결재
 app.include_router(schedule_router)   # 팀 스케줄
+app.include_router(members_router)    # 팀원 관리
 app.include_router(excel_router)      # 엑셀 자동화
 app.include_router(chatbot_router)    # 민원 챗봇
 app.include_router(news_router)       # 뉴스 수집

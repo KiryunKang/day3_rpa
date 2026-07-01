@@ -185,4 +185,29 @@ def init_db() -> None:
                 "INSERT INTO news_keywords (keyword) VALUES (?)",
                 [("공공행정",), ("행정안전부",), ("지방자치",), ("전자정부",), ("민원행정",)],
             )
+
+        # 팀원 (일정 담당자 마스터)
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS members (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                name       TEXT    NOT NULL UNIQUE,
+                team       TEXT    NOT NULL DEFAULT '',
+                role       TEXT    NOT NULL DEFAULT '',
+                created_at TEXT    NOT NULL DEFAULT (datetime('now', 'localtime'))
+            )
+            """
+        )
+        m_count = conn.execute("SELECT COUNT(*) FROM members").fetchone()[0]
+        if m_count == 0:
+            conn.executemany(
+                "INSERT INTO members (name, team, role) VALUES (?, ?, ?)",
+                [
+                    ("홍길동", "총무팀", "주무관"),
+                    ("김철수", "재무팀", "주무관"),
+                    ("이영희", "민원팀", "팀장"),
+                    ("박민수", "기획팀", "주무관"),
+                    ("최지은", "총무팀", "주무관"),
+                ],
+            )
         conn.commit()
