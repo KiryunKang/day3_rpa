@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>공공 행정업무 슈퍼앱 — 문서 종합</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --ink: #1f2933;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --brand: #2563eb;
+    --brand-soft: #eff4ff;
+    --green: #16a34a;
+    --amber: #d97706;
+    --red: #dc2626;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, "Segoe UI", "Malgun Gothic", sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.6;
+  }
+  a { color: var(--brand); }
+  .layout { display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  aside {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--card);
+    border-right: 1px solid var(--line);
+    padding: 24px 18px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  aside h2 { font-size: 15px; margin: 0 0 4px; }
+  aside .sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+  aside nav a {
+    display: block;
+    padding: 7px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 14px;
+  }
+  aside nav a:hover { background: var(--brand-soft); }
+  aside nav .group { font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--muted); margin: 16px 10px 4px; }
+
+  /* Main */
+  main { flex: 1; padding: 40px 48px; max-width: 1000px; }
+  header.hero { margin-bottom: 36px; }
+  header.hero h1 { font-size: 30px; margin: 0 0 8px; }
+  header.hero p { color: var(--muted); margin: 0; }
+  .badge { display: inline-block; background: var(--brand-soft); color: var(--brand);
+    border-radius: 999px; padding: 3px 12px; font-size: 12px; font-weight: 600; margin-right: 6px; }
+
+  section { margin-bottom: 48px; scroll-margin-top: 20px; }
+  section > h2 {
+    font-size: 22px; border-bottom: 2px solid var(--line);
+    padding-bottom: 8px; margin-bottom: 20px;
+  }
+  h3 { font-size: 17px; margin: 24px 0 10px; }
+
+  .grid { display: grid; gap: 16px; }
+  .grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 18px 20px;
+  }
+  .card h4 { margin: 0 0 6px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+  .card .ico { font-size: 20px; }
+  .card p { margin: 6px 0 0; font-size: 14px; color: var(--muted); }
+  .card ul { margin: 10px 0 0; padding-left: 18px; font-size: 13.5px; }
+  .card li { margin: 3px 0; }
+
+  .stack-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: 14px; }
+  .stack-item:last-child { border-bottom: none; }
+  .stack-item b { color: var(--brand); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; background: var(--card);
+    border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: #f0f3f7; font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  code { background: #f0f2f5; padding: 1px 6px; border-radius: 5px; font-size: 12.5px;
+    font-family: "SFMono-Regular", Consolas, monospace; }
+  pre { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: var(--radius);
+    overflow-x: auto; font-size: 13px; line-height: 1.5; }
+  pre code { background: none; color: inherit; padding: 0; }
+
+  .pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+  .pill.must { background: #fee2e2; color: var(--red); }
+  .pill.opt { background: #fef3c7; color: var(--amber); }
+
+  .note { background: var(--brand-soft); border-left: 4px solid var(--brand);
+    padding: 12px 16px; border-radius: 8px; font-size: 14px; margin: 12px 0; }
+  .diagram { background: #0f172a; color: #cbd5e1; padding: 20px; border-radius: var(--radius);
+    font-family: "SFMono-Regular", Consolas, monospace; font-size: 12.5px; white-space: pre; overflow-x: auto; }
+
+  .doclinks a { display: inline-block; margin-right: 14px; font-size: 14px; font-weight: 600; }
+  footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line);
+    padding-top: 20px; margin-top: 40px; }
+  @media (max-width: 820px) {
+    aside { display: none; }
+    main { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside>
+    <h2>📁 행정업무 슈퍼앱</h2>
+    <div class="sub">문서 종합 대시보드</div>
+    <nav>
+      <a href="#overview">개요</a>
+      <a href="#stack">기술 스택</a>
+      <div class="group">기능 (PRD)</div>
+      <a href="#f-schedule">① 팀 스케줄</a>
+      <a href="#f-excel">② 엑셀 자동화</a>
+      <a href="#f-chatbot">③ 민원 챗봇</a>
+      <a href="#f-news">④ 뉴스 수집</a>
+      <div class="group">설계 (Architecture)</div>
+      <a href="#arch">아키텍처</a>
+      <a href="#structure">프로젝트 구조</a>
+      <a href="#data">데이터 모델</a>
+      <a href="#api">API 설계</a>
+      <div class="group">운영 (Operation)</div>
+      <a href="#run">실행 방법</a>
+      <a href="#errors">자주 발생하는 에러</a>
+      <div class="group">원문</div>
+      <a href="#docs">문서 파일</a>
+    </nav>
+  </aside>
+
+  <main>
+    <header class="hero">
+      <h1>공공 직군 행정업무 슈퍼앱</h1>
+      <p>
+        <span class="badge">TypeScript · Vite · React</span>
+        <span class="badge">Python · FastAPI · uv</span>
+        <span class="badge">SQLite</span>
+        <span class="badge">Claude Opus 4.8</span>
+      </p>
+      <p style="margin-top:12px">PRD · Architecture · Operation 3개 문서를 한눈에 정리한 종합 뷰 · 최종 수정 2026-07-01</p>
+    </header>
+
+    <!-- 개요 -->
+    <section id="overview">
+      <h2>개요</h2>
+      <p>공공기관 행정 실무자의 반복 업무를 한 앱에서 처리하는 웹 슈퍼앱. 흩어진 도구(일정 공유, 엑셀 가공, 민원 응대, 뉴스 모니터링)를 통합해 업무 전환 비용을 줄인다.</p>
+      <div class="grid cols-3" style="margin-top:16px">
+        <div class="card"><h4><span class="ico">👥</span>대상</h4><p>행정 담당자, 팀장, 민원 대응 담당자</p></div>
+        <div class="card"><h4><span class="ico">🎯</span>핵심 가치</h4><p>반복 업무 자동화(RPA) · 정보 공유 · AI 보조</p></div>
+        <div class="card"><h4><span class="ico">📦</span>초기 범위</h4><p>아래 4개 기능 + 기존 전자결재/공지 모듈</p></div>
+      </div>
+    </section>
+
+    <!-- 기술 스택 -->
+    <section id="stack">
+      <h2>기술 스택</h2>
+      <div class="grid cols-2">
+        <div class="card">
+          <div class="stack-item"><span>Frontend</span><b>TypeScript + Vite + React</b></div>
+          <div class="stack-item"><span>Backend</span><b>Python + FastAPI (uv)</b></div>
+          <div class="stack-item"><span>Database</span><b>SQLite</b></div>
+          <div class="stack-item"><span>AI</span><b>Claude Opus 4.8</b></div>
+        </div>
+        <div class="card">
+          <div class="stack-item"><span>스케줄러</span><b>APScheduler</b></div>
+          <div class="stack-item"><span>엑셀</span><b>pandas + openpyxl</b></div>
+          <div class="stack-item"><span>뉴스 수집</span><b>feedparser / httpx</b></div>
+          <div class="stack-item"><span>개발환경</span><b>Node 24 · uv 0.11 · Py 3.14</b></div>
+        </div>
+      </div>
+      <div class="note">Python은 시스템 설치본이 아닌 <b>uv 관리 인터프리터</b>를 사용한다. 모든 백엔드 실행은 <code>uv run …</code>.</div>
+    </section>
+
+    <!-- 기능 카드 -->
+    <section id="features">
+      <h2>기능 요구사항 (PRD)</h2>
+      <div class="grid cols-2">
+
+        <div class="card" id="f-schedule">
+          <h4><span class="ico">📅</span>① 팀원 스케줄 관리</h4>
+          <p>팀원들의 휴가·근무·출장 일정을 등록/공유하는 캘린더.</p>
+          <ul>
+            <li><span class="pill must">必</span> 일정 등록(제목/유형/기간/담당자/메모)</li>
+            <li><span class="pill must">必</span> 월간·주간 캘린더 뷰, 유형별 색상</li>
+            <li><span class="pill must">必</span> 수정/삭제</li>
+            <li><span class="pill opt">選</span> 담당자·유형·기간 필터</li>
+          </ul>
+        </div>
+
+        <div class="card" id="f-excel">
+          <h4><span class="ico">📊</span>② 엑셀 업무자동화</h4>
+          <p>특정 컬럼 기준으로 엑셀을 나누거나 여러 파일을 합친다.</p>
+          <ul>
+            <li><span class="pill must">必</span> 업로드 + 시트/컬럼 미리보기</li>
+            <li><span class="pill must">必</span> 분할: 기준 컬럼값별 분리 → 다중시트/ZIP</li>
+            <li><span class="pill must">必</span> 병합: 다중 파일 결합(헤더 검증)</li>
+            <li><span class="pill opt">選</span> 처리 이력 기록</li>
+          </ul>
+        </div>
+
+        <div class="card" id="f-chatbot">
+          <h4><span class="ico">💬</span>③ 민원대응 챗봇</h4>
+          <p>첨부 민원 매뉴얼 근거로 대응 방식·응대 스크립트 생성.</p>
+          <ul>
+            <li><span class="pill must">必</span> 매뉴얼 업로드(PDF/TXT/MD)</li>
+            <li><span class="pill must">必</span> 매뉴얼 근거 응대 스크립트 + 인용(Citations)</li>
+            <li><span class="pill must">必</span> 멀티턴 대화</li>
+            <li><span class="pill must">必</span> 근거 없으면 "매뉴얼에 근거 없음" 고지</li>
+          </ul>
+          <p style="margin-top:8px"><b>AI</b>: Claude Opus 4.8 · 매뉴얼을 document 블록으로 전달 · 프롬프트 캐싱 · 스트리밍 응답</p>
+        </div>
+
+        <div class="card" id="f-news">
+          <h4><span class="ico">📰</span>④ 뉴스 기사 수집</h4>
+          <p>공공 행정 관련 뉴스를 매일 아침 자동 수집.</p>
+          <ul>
+            <li><span class="pill must">必</span> 매일 07:00 자동 수집(스케줄)</li>
+            <li><span class="pill must">必</span> RSS 등 소스 수집 + 키워드 필터</li>
+            <li><span class="pill must">必</span> URL 기준 중복 제거</li>
+            <li><span class="pill opt">選</span> 수동 수집 · AI 요약 브리핑</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 아키텍처 -->
+    <section id="arch">
+      <h2>아키텍처</h2>
+      <div class="diagram">┌──────────────────────────┐        ┌──────────────────────────────┐
+│  Browser (React SPA)     │  /api  │  FastAPI (uv, Python 3.14)   │
+│  캘린더 / 엑셀 / 챗봇     │ ─────▶ │  라우터: schedule / excel /   │
+│    / 뉴스 / 결재           │  프록시 │  chatbot / news / documents   │
+└──────────────────────────┘        │   ├─ SQLite (app.db)          │
+                                     │   ├─ APScheduler (매일 07:00) │
+                                     │   └─ Claude API (opus-4-8)    │
+                                     └──────────────────────────────┘
+                                            │                 │
+                                    외부 뉴스 소스(RSS)   Anthropic API</div>
+      <p>단일 FastAPI 앱에 기능별 <b>APIRouter</b>를 등록하는 모듈러 모놀리식. 백그라운드 스케줄러는 앱 <code>lifespan</code>에서 기동/종료.</p>
+    </section>
+
+    <!-- 프로젝트 구조 -->
+    <section id="structure">
+      <h2>프로젝트 구조 (목표)</h2>
+      <pre><code>day3_rpa/
+├── docs/                  # 문서 (PRD/architecture/operation/index.html)
+├── frontend/              # Vite + React + TS
+│   └── src/
+│       ├── api.ts, types.ts, App.tsx
+│       └── features/      # schedule / excel / chatbot / news / approval
+└── backend/               # FastAPI (uv)
+    ├── main.py            # uv run dev 진입점
+    └── app/
+        ├── main.py        # FastAPI 앱, CORS, 라우터, lifespan
+        ├── db.py          # SQLite 연결/스키마
+        ├── schedule.py    # 팀 스케줄
+        ├── excel.py       # 엑셀 분할/병합
+        ├── chatbot.py     # 민원 챗봇 (Claude API)
+        ├── news.py        # 뉴스 수집 라우터
+        ├── scheduler.py   # APScheduler 설정
+        └── documents.py   # (기존) 전자결재</code></pre>
+    </section>
+
+    <!-- 데이터 모델 -->
+    <section id="data">
+      <h2>데이터 모델 (SQLite)</h2>
+      <p>기존: <code>notices</code>, <code>documents</code>, <code>approval_steps</code>. 신규 테이블:</p>
+      <table>
+        <tr><th>테이블</th><th>주요 컬럼</th><th>용도</th></tr>
+        <tr><td><code>schedule_events</code></td><td>title, type, start_date, end_date, owner, memo</td><td>팀 일정</td></tr>
+        <tr><td><code>excel_jobs</code></td><td>job_type, source_files, key_column, row_count</td><td>엑셀 처리 이력</td></tr>
+        <tr><td><code>manuals</code></td><td>title, filename, content</td><td>민원 매뉴얼</td></tr>
+        <tr><td><code>chat_messages</code></td><td>session_id, role, content</td><td>챗봇 대화 로그(선택)</td></tr>
+        <tr><td><code>news_articles</code></td><td>title, url(UNIQUE), source, keyword, published_at</td><td>뉴스 기사</td></tr>
+      </table>
+    </section>
+
+    <!-- API -->
+    <section id="api">
+      <h2>API 설계 (요약)</h2>
+      <table>
+        <tr><th>기능</th><th>메서드 · 경로</th><th>설명</th></tr>
+        <tr><td rowspan="2">스케줄</td><td><code>GET/POST /api/schedule</code></td><td>목록(필터)/등록</td></tr>
+        <tr><td><code>PUT/DELETE /api/schedule/{id}</code></td><td>수정/삭제</td></tr>
+        <tr><td rowspan="3">엑셀</td><td><code>POST /api/excel/preview</code></td><td>시트·컬럼 미리보기</td></tr>
+        <tr><td><code>POST /api/excel/split</code></td><td>컬럼 기준 분할 → 다운로드</td></tr>
+        <tr><td><code>POST /api/excel/merge</code></td><td>다중 병합 → 다운로드</td></tr>
+        <tr><td rowspan="2">챗봇</td><td><code>POST /api/chatbot/manuals</code></td><td>매뉴얼 업로드/목록</td></tr>
+        <tr><td><code>POST /api/chatbot/chat</code></td><td>민원 응대 생성(스트리밍)</td></tr>
+        <tr><td rowspan="2">뉴스</td><td><code>GET /api/news</code></td><td>기사 목록(필터)</td></tr>
+        <tr><td><code>POST /api/news/collect</code></td><td>수동 수집 실행</td></tr>
+      </table>
+    </section>
+
+    <!-- 실행 -->
+    <section id="run">
+      <h2>실행 방법</h2>
+      <h3>백엔드 (터미널 1)</h3>
+      <pre><code>cd backend
+uv sync            # 최초 1회
+uv run dev         # → http://127.0.0.1:8000  (문서: /docs)</code></pre>
+      <h3>프론트엔드 (터미널 2)</h3>
+      <pre><code>cd frontend
+npm install        # 최초 1회
+npm run dev        # → http://localhost:5173</code></pre>
+      <div class="note">민원 챗봇/AI 요약은 <code>ANTHROPIC_API_KEY</code> 환경변수가 필요하다. 키가 없어도 스케줄·엑셀·캘린더는 정상 동작한다.</div>
+    </section>
+
+    <!-- 에러 -->
+    <section id="errors">
+      <h2>자주 발생하는 에러</h2>
+      <table>
+        <tr><th>증상</th><th>원인</th><th>해결</th></tr>
+        <tr><td>포트 8000 already in use</td><td>이전 서버 미종료</td><td><code>Get-NetTCPConnection -LocalPort 8000 …</code> 로 종료</td></tr>
+        <tr><td>FE에서 /api 404·CORS</td><td>백엔드 미기동/프록시 미설정</td><td>백엔드 실행·<code>vite.config.ts</code> proxy 확인</td></tr>
+        <tr><td>챗봇 401 AuthenticationError</td><td>API 키 미설정/오타</td><td><code>ANTHROPIC_API_KEY</code> 재확인</td></tr>
+        <tr><td>챗봇 404 (모델)</td><td>모델 ID 오타</td><td>정확히 <code>claude-opus-4-8</code> (날짜 접미사 X)</td></tr>
+        <tr><td>엑셀 병합 헤더 불일치</td><td>컬럼 구성 상이</td><td>파일 헤더를 동일하게 맞춤</td></tr>
+        <tr><td>뉴스 스케줄 미실행</td><td>앱이 꺼져 있었음</td><td>서버 상시 구동(서비스/데몬화)</td></tr>
+        <tr><td>한글 콘솔 깨짐</td><td>PowerShell 인코딩</td><td>API는 UTF-8 정상 · 브라우저/<code>/docs</code>에서 확인</td></tr>
+      </table>
+    </section>
+
+    <!-- 문서 링크 -->
+    <section id="docs">
+      <h2>문서 원문</h2>
+      <div class="card doclinks">
+        <a href="PRD.md">📄 PRD.md</a>
+        <a href="architecture.md">🏗️ architecture.md</a>
+        <a href="operation.md">🛠️ operation.md</a>
+        <p style="margin-top:10px">본 HTML은 세 문서의 종합 요약이며, 상세 내용은 각 마크다운 원문을 참조.</p>
+      </div>
+    </section>
+
+    <footer>
+      공공 직군 행정업무 슈퍼앱 — 문서 종합 · 이 페이지는 전체 프로그램 구현 <b>이전</b> 단계의 기획/설계 문서다.
+    </footer>
+  </main>
+</div>
+</body>
+</html>

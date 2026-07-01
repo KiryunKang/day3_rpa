@@ -1,0 +1,20 @@
+# ---- Python / backend ----
+__pycache__/
+*.py[cod]
+.venv/
+backend/.venv/
+*.db
+backend/app.db
+
+# ---- Node / frontend ----
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# ---- 기타 ----
+.env
+.env.*
+.DS_Store
+
+# Claude Code 로컬 설정
+.claude/
