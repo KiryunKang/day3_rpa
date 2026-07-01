@@ -10,7 +10,7 @@
 | Frontend | **TypeScript + Vite + React** | SPA, `/api` → 백엔드 프록시 |
 | Backend | **Python + FastAPI** | 패키지 관리는 **uv** 필수 |
 | Database | **SQLite** | 파일 기반, Python 내장 `sqlite3` |
-| AI | **Anthropic Claude API** (`claude-opus-4-8`) | 민원 챗봇 · 뉴스 요약(선택) |
+| AI | **OpenAI API** (`gpt-4o-mini`, `chat.completions`) | 민원 챗봇 |
 | 스케줄러 | **APScheduler** | 뉴스 매일 아침 수집 |
 | 엑셀 | **pandas + openpyxl** | 분할/병합 |
 | 뉴스 수집 | **feedparser / httpx (+ BeautifulSoup)** | RSS·웹 |
@@ -54,7 +54,7 @@ day3_rpa/
         ├── documents.py      # (기존) 전자결재 라우터
         ├── schedule.py       # 팀 스케줄 라우터
         ├── excel.py          # 엑셀 분할/병합 라우터
-        ├── chatbot.py        # 민원 챗봇 라우터 (Claude API)
+        ├── chatbot.py        # 민원 챗봇 라우터 (OpenAI)
         ├── news.py           # 뉴스 수집 라우터 + 스케줄 작업
         └── scheduler.py      # APScheduler 설정(앱 시작 시 기동)
 ```
@@ -73,10 +73,10 @@ day3_rpa/
 └──────────────────────────┘        │                              │
                                      │  ├─ SQLite (app.db)          │
                                      │  ├─ APScheduler (매일 07:00) │
-                                     │  └─ Claude API (opus-4-8)    │
+                                     │  └─ OpenAI API (gpt-4o-mini) │
                                      └──────────────────────────────┘
                                                 │            │
-                                     외부 뉴스 소스(RSS)   Anthropic API
+                                     외부 뉴스 소스(RSS)     OpenAI API
 ```
 
 - FE는 정적 자산으로 빌드, DEV에서는 Vite 프록시로 `/api` 요청을 8000 포트 FastAPI에 전달
@@ -107,23 +107,22 @@ day3_rpa/
 - 임시파일은 처리 후 즉시 삭제, 결과는 `StreamingResponse`
 - pandas로 로드, openpyxl 엔진으로 기록
 
-### 4.5 `app/chatbot.py` — 민원 챗봇 (Claude API)
-- `POST /api/chatbot/manuals`: 매뉴얼 업로드/등록(메타·본문 저장)
-- `POST /api/chatbot/chat`: 민원 입력 + 선택 매뉴얼 → Claude 호출
+### 4.5 `app/chatbot.py` — 민원 챗봇 (OpenAI)
+- `POST /api/chatbot/manuals`: 매뉴얼 업로드/등록(메타·본문 저장, PDF/TXT/MD 텍스트 추출)
+- `POST /api/chatbot/chat`: 민원 입력 + 선택 매뉴얼 → OpenAI 호출
 - 구현 원칙:
-  - Anthropic **Python SDK** 사용, 모델 `claude-opus-4-8`
-  - 매뉴얼 본문을 `document` 블록으로 전달, **`citations: {enabled: true}`** 로 근거 인용
-  - 큰 매뉴얼은 **프롬프트 캐싱**(`cache_control: ephemeral`)으로 반복 호출 비용 절감
-  - **스트리밍**(`messages.stream`)으로 응답 반환(FastAPI `StreamingResponse`/SSE)
+  - OpenAI **Python SDK** 사용(`chat.completions`), 모델 `gpt-4o-mini`(`OPENAI_MODEL`로 변경)
+  - 매뉴얼 본문을 **시스템 프롬프트에 근거 자료로 삽입**해 grounding
   - 시스템 프롬프트: "제공된 매뉴얼에 근거해서만 답하고, 근거가 없으면 '매뉴얼에 근거 없음'이라고 답하라"
   - 멀티턴: 대화 이력을 요청마다 함께 전송(무상태 API)
-- 인증: `ANTHROPIC_API_KEY` 환경변수(코드/DB에 저장 금지)
+  - 인용(citations): OpenAI에는 Claude 같은 네이티브 인용이 없어 현재 미제공(빈 배열 반환)
+- 인증: `OPENAI_API_KEY` 환경변수 — `backend/.env`에서 `python-dotenv`로 자동 로드(코드/DB 저장 금지)
 
 ### 4.6 `app/news.py` + `app/scheduler.py` — 뉴스 수집
 - `scheduler.py`: APScheduler(`AsyncIOScheduler`) 로 매일 07:00 `collect_news()` 실행
 - `collect_news()`: 설정된 소스(RSS)에서 기사 파싱 → 키워드 필터 → URL 중복 제거 → SQLite 저장
 - 엔드포인트: 기사 목록 조회, 키워드/기간 필터, `POST /api/news/collect`(수동 실행)
-- (선택) `POST /api/news/brief`: 수집 기사들을 Claude로 요약 브리핑
+- (선택) `POST /api/news/brief`: 수집 기사들을 OpenAI로 요약 브리핑
 
 ---
 
@@ -213,8 +212,9 @@ CREATE TABLE news_articles (
 `uv add` 로 추가할 패키지:
 
 ```
-fastapi, uvicorn[standard]      # 웹 (설치됨)
-anthropic                       # Claude API
+fastapi, uvicorn[standard]      # 웹
+openai                          # 민원 챗봇 (chat.completions)
+python-dotenv                   # backend/.env 자동 로드
 pandas, openpyxl                # 엑셀 처리
 apscheduler                     # 스케줄링
 httpx, feedparser, beautifulsoup4   # 뉴스 수집
@@ -228,12 +228,12 @@ pypdf                           # 매뉴얼 PDF 텍스트 추출
 
 ## 8. 비기능 · 보안 설계
 
-- **API 키**: `ANTHROPIC_API_KEY`는 환경변수/`.env`로만. Git 커밋 금지(`.gitignore` 반영)
+- **API 키**: `OPENAI_API_KEY`는 `backend/.env`로만(자동 로드). Git 커밋 금지(`.gitignore` 반영)
 - **개인정보**: 엑셀·매뉴얼·민원은 민감정보 가능 → 임시파일 즉시 삭제, 로그 마스킹
-- **외부 호출**: 뉴스 소스·Claude 도메인만 허용(화이트리스트). 수집 요청 간격 준수
-- **환각 억제**: 챗봇은 매뉴얼 근거 강제 + Citations로 검증 가능
+- **외부 호출**: 뉴스 소스·OpenAI 도메인만 허용(화이트리스트). 수집 요청 간격 준수
+- **환각 억제**: 챗봇 시스템 프롬프트에 "매뉴얼 근거 외 답변 금지" 명시
 - **CORS**: 개발 시 Vite 오리진(`localhost:5173`)만 허용
-- **에러 처리**: Claude 호출은 `RateLimitError`/`APIStatusError` 등 예외 분기 및 재시도(SDK 기본 백오프)
+- **에러 처리**: OpenAI 호출은 `AuthenticationError`(401)/`APIStatusError`(502) 등 예외 분기
 
 ## 9. 확장 로드맵
 

@@ -150,7 +150,7 @@
         <span class="badge">TypeScript · Vite · React</span>
         <span class="badge">Python · FastAPI · uv</span>
         <span class="badge">SQLite</span>
-        <span class="badge">Claude Opus 4.8</span>
+        <span class="badge">OpenAI GPT-4o-mini</span>
       </p>
       <p style="margin-top:12px">PRD · Architecture · Operation 3개 문서를 한눈에 정리한 종합 뷰 · 최종 수정 2026-07-01</p>
     </header>
@@ -174,7 +174,7 @@
           <div class="stack-item"><span>Frontend</span><b>TypeScript + Vite + React</b></div>
           <div class="stack-item"><span>Backend</span><b>Python + FastAPI (uv)</b></div>
           <div class="stack-item"><span>Database</span><b>SQLite</b></div>
-          <div class="stack-item"><span>AI</span><b>Claude Opus 4.8</b></div>
+          <div class="stack-item"><span>AI</span><b>OpenAI GPT-4o-mini</b></div>
         </div>
         <div class="card">
           <div class="stack-item"><span>스케줄러</span><b>APScheduler</b></div>
@@ -218,11 +218,11 @@
           <p>첨부 민원 매뉴얼 근거로 대응 방식·응대 스크립트 생성.</p>
           <ul>
             <li><span class="pill must">必</span> 매뉴얼 업로드(PDF/TXT/MD)</li>
-            <li><span class="pill must">必</span> 매뉴얼 근거 응대 스크립트 + 인용(Citations)</li>
+            <li><span class="pill must">必</span> 매뉴얼 근거 응대 스크립트 생성</li>
             <li><span class="pill must">必</span> 멀티턴 대화</li>
             <li><span class="pill must">必</span> 근거 없으면 "매뉴얼에 근거 없음" 고지</li>
           </ul>
-          <p style="margin-top:8px"><b>AI</b>: Claude Opus 4.8 · 매뉴얼을 document 블록으로 전달 · 프롬프트 캐싱 · 스트리밍 응답</p>
+          <p style="margin-top:8px"><b>AI</b>: OpenAI gpt-4o-mini · 매뉴얼을 시스템 프롬프트 근거로 전달 · 근거 외 답변 금지</p>
         </div>
 
         <div class="card" id="f-news">
@@ -248,10 +248,10 @@
 │    / 뉴스 / 결재           │  프록시 │  chatbot / news / documents   │
 └──────────────────────────┘        │   ├─ SQLite (app.db)          │
                                      │   ├─ APScheduler (매일 07:00) │
-                                     │   └─ Claude API (opus-4-8)    │
+                                     │   └─ OpenAI API (gpt-4o-mini) │
                                      └──────────────────────────────┘
                                             │                 │
-                                    외부 뉴스 소스(RSS)   Anthropic API</div>
+                                    외부 뉴스 소스(RSS)     OpenAI API</div>
       <p>단일 FastAPI 앱에 기능별 <b>APIRouter</b>를 등록하는 모듈러 모놀리식. 백그라운드 스케줄러는 앱 <code>lifespan</code>에서 기동/종료.</p>
     </section>
 
@@ -271,7 +271,7 @@
         ├── db.py          # SQLite 연결/스키마
         ├── schedule.py    # 팀 스케줄
         ├── excel.py       # 엑셀 분할/병합
-        ├── chatbot.py     # 민원 챗봇 (Claude API)
+        ├── chatbot.py     # 민원 챗봇 (OpenAI)
         ├── news.py        # 뉴스 수집 라우터
         ├── scheduler.py   # APScheduler 설정
         └── documents.py   # (기존) 전자결재</code></pre>
@@ -319,7 +319,7 @@ uv run python main.py         # → http://127.0.0.1:8000  (문서: /docs)</code
       <pre><code>cd frontend
 npm install        # 최초 1회
 npm run dev        # → http://localhost:5173</code></pre>
-      <div class="note">민원 챗봇/AI 요약은 <code>ANTHROPIC_API_KEY</code> 환경변수가 필요하다. 키가 없어도 스케줄·엑셀·캘린더는 정상 동작한다.</div>
+      <div class="note">민원 챗봇은 <code>OPENAI_API_KEY</code>가 필요하다(<code>backend/.env</code> 자동 로드). 키가 없어도 스케줄·엑셀·뉴스·결재는 정상 동작한다.</div>
     </section>
 
     <!-- 에러 -->
@@ -329,8 +329,8 @@ npm run dev        # → http://localhost:5173</code></pre>
         <tr><th>증상</th><th>원인</th><th>해결</th></tr>
         <tr><td>포트 8000 already in use</td><td>이전 서버 미종료</td><td><code>Get-NetTCPConnection -LocalPort 8000 …</code> 로 종료</td></tr>
         <tr><td>FE에서 /api 404·CORS</td><td>백엔드 미기동/프록시 미설정</td><td>백엔드 실행·<code>vite.config.ts</code> proxy 확인</td></tr>
-        <tr><td>챗봇 401 AuthenticationError</td><td>API 키 미설정/오타</td><td><code>ANTHROPIC_API_KEY</code> 재확인</td></tr>
-        <tr><td>챗봇 404 (모델)</td><td>모델 ID 오타</td><td>정확히 <code>claude-opus-4-8</code> (날짜 접미사 X)</td></tr>
+        <tr><td>챗봇 401 인증 실패</td><td>API 키 오타/폐기</td><td><code>OPENAI_API_KEY</code> 재확인 또는 재발급</td></tr>
+        <tr><td>챗봇 503</td><td>OPENAI_API_KEY 미설정</td><td><code>backend/.env</code>에 키 설정 후 재시작</td></tr>
         <tr><td>엑셀 병합 헤더 불일치</td><td>컬럼 구성 상이</td><td>파일 헤더를 동일하게 맞춤</td></tr>
         <tr><td>뉴스 스케줄 미실행</td><td>앱이 꺼져 있었음</td><td>서버 상시 구동(서비스/데몬화)</td></tr>
         <tr><td>한글 콘솔 깨짐</td><td>PowerShell 인코딩</td><td>API는 UTF-8 정상 · 브라우저/<code>/docs</code>에서 확인</td></tr>

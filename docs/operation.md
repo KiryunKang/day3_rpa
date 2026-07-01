@@ -9,20 +9,21 @@
 |------|-----------|-----------|
 | Node.js / npm | `node -v` / `npm -v` | v24+ / 11+ |
 | uv | `uv --version` | 0.11+ |
-| (챗봇용) API 키 | `echo $ANTHROPIC_API_KEY` | 발급 필요 |
+| (챗봇용) API 키 | `echo $OPENAI_API_KEY` | 발급 필요 |
 
 > Python은 uv가 관리한다. 별도 시스템 Python 설치 불필요(`uv run`이 3.14 자동 사용).
 
 ### 환경변수 설정
 
-민원 챗봇/뉴스 요약을 쓰려면 Anthropic API 키가 필요하다. `backend/.env` 또는 셸 환경변수로 설정한다.
+민원 챗봇을 쓰려면 OpenAI API 키가 필요하다. `backend/.env`에 설정하면 앱 시작 시 자동 로드된다(`python-dotenv`).
 
 ```bash
-# PowerShell (현재 세션)
-$env:ANTHROPIC_API_KEY = "sk-ant-..."
+# backend/.env  (git에 커밋 금지 — .gitignore 처리됨)
+OPENAI_API_KEY=sk-...
+# OPENAI_MODEL=gpt-4o   (선택, 기본 gpt-4o-mini)
 
-# 또는 backend/.env  (git에 커밋 금지)
-ANTHROPIC_API_KEY=sk-ant-...
+# 또는 PowerShell 현재 세션 환경변수
+$env:OPENAI_API_KEY = "sk-..."
 ```
 
 > 키가 없어도 스케줄/엑셀/캘린더 기능은 정상 동작한다. 챗봇·AI 요약만 비활성.
@@ -103,17 +104,17 @@ Get-NetTCPConnection -LocalPort 8000 -State Listen |
   ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
 ```
 
-### 4.2 민원 챗봇 (Claude API)
+### 4.2 민원 챗봇 (OpenAI)
 
 | 증상 | 원인 | 해결 |
 |------|------|------|
-| `AuthenticationError` (401) | 키 미설정/오타 | `ANTHROPIC_API_KEY` 재확인 |
-| `NotFoundError` (404) 모델 | 모델 ID 오타 | 정확히 `claude-opus-4-8` 사용(날짜 접미사 X) |
-| `RateLimitError` (429) | 요청 초과 | SDK 자동 백오프. 잠시 후 재시도 |
-| 큰 매뉴얼 응답 지연/타임아웃 | 긴 입력·출력 | 스트리밍 사용, `max_tokens` 여유. 매뉴얼은 프롬프트 캐싱 |
-| 답변이 매뉴얼과 무관 | 근거 강제 부족 | 시스템 프롬프트에 "근거 외 답변 금지" 유지, Citations 확인 |
+| 503 "OPENAI_API_KEY 미설정" | 키 없음 | `backend/.env`에 `OPENAI_API_KEY` 설정 후 재시작 |
+| 401 인증 실패 | 키 오타/폐기 | 키 재확인 또는 재발급 |
+| 502 "OpenAI API 오류" | 모델 권한 없음/요청 초과 등 | `OPENAI_MODEL` 확인(기본 `gpt-4o-mini`), 잠시 후 재시도 |
+| 답변이 매뉴얼과 무관 | 근거 강제 부족 | 시스템 프롬프트에 "매뉴얼 근거 외 답변 금지" 유지 |
 
-> 참고: Opus 4.8은 `budget_tokens`/`temperature` 등 파라미터가 400을 반환한다. thinking은 `{"type":"adaptive"}` 사용.
+> 참고: 챗봇은 OpenAI `chat.completions`를 사용하며 매뉴얼 전문을 시스템 프롬프트에 근거로 넣는다.
+> `.env`는 `python-dotenv`로 앱 시작 시 자동 로드된다.
 
 ### 4.3 엑셀
 
@@ -147,6 +148,6 @@ Get-NetTCPConnection -LocalPort 8000 -State Listen |
 
 - [ ] `uv run python main.py` 로 백엔드 기동, `/api/health` 200 확인
 - [ ] `npm run dev` 로 프론트 기동, 화면 로드 확인
-- [ ] `ANTHROPIC_API_KEY` 설정(챗봇 사용 시)
+- [ ] `OPENAI_API_KEY` 설정(챗봇 사용 시, `backend/.env`)
 - [ ] 각 탭 기본 동작(등록/조회/업로드) 스모크 테스트
 - [ ] 뉴스 "지금 수집" 1회 성공 확인

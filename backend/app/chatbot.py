@@ -1,4 +1,4 @@
-"""민원대응 챗봇 API 라우터 — 매뉴얼 근거 응대 스크립트 생성 (Claude API)."""
+"""민원대응 챗봇 API 라우터 — 매뉴얼 근거 응대 스크립트 생성 (OpenAI)."""
 
 import io
 import os
@@ -10,10 +10,10 @@ from app.db import get_connection
 
 router = APIRouter(prefix="/api/chatbot", tags=["chatbot"])
 
-MODEL = "claude-opus-4-8"
+MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 SYSTEM_PROMPT = (
     "당신은 공공기관 민원 대응 보조 챗봇입니다. "
-    "제공된 민원 매뉴얼에 근거해서만 대응 방식과 응대 스크립트를 작성하세요. "
+    "아래에 제공되는 '민원 매뉴얼'에 근거해서만 대응 방식과 응대 스크립트를 작성하세요. "
     "매뉴얼에 근거가 없는 내용은 지어내지 말고 '매뉴얼에 근거 없음'이라고 명확히 밝히세요. "
     "답변은 (1) 핵심 대응 방식, (2) 바로 사용할 수 있는 응대 스크립트 순서로 한국어로 작성하세요."
 )
@@ -99,10 +99,10 @@ def list_manuals() -> list[dict]:
 @router.post("/chat", response_model=ChatOut)
 def chat(payload: ChatIn) -> dict:
     """민원 상황을 받아 매뉴얼 근거 응대 스크립트를 생성한다."""
-    if not os.getenv("ANTHROPIC_API_KEY"):
+    if not os.getenv("OPENAI_API_KEY"):
         raise HTTPException(
             status_code=503,
-            detail="ANTHROPIC_API_KEY가 설정되지 않았습니다. 서버 환경변수를 설정한 뒤 다시 시도하세요.",
+            detail="OPENAI_API_KEY가 설정되지 않았습니다. backend/.env 에 키를 설정한 뒤 다시 시도하세요.",
         )
 
     with get_connection() as conn:
@@ -112,56 +112,31 @@ def chat(payload: ChatIn) -> dict:
     if manual is None:
         raise HTTPException(status_code=404, detail="매뉴얼을 찾을 수 없습니다.")
 
-    # 첫 사용자 턴에 매뉴얼을 document 블록으로 제공(인용 + 프롬프트 캐싱)
-    doc_block = {
-        "type": "document",
-        "source": {"type": "text", "media_type": "text/plain", "data": manual["content"]},
-        "title": manual["title"],
-        "citations": {"enabled": True},
-        "cache_control": {"type": "ephemeral"},
-    }
-
-    api_messages: list[dict] = []
-    for i, turn in enumerate(payload.messages):
-        if i == 0 and turn.role == "user":
-            api_messages.append(
-                {"role": "user", "content": [doc_block, {"type": "text", "text": turn.content}]}
-            )
-        else:
-            api_messages.append({"role": turn.role, "content": turn.content})
+    # 매뉴얼을 시스템 프롬프트에 근거 자료로 포함
+    system = (
+        f"{SYSTEM_PROMPT}\n\n"
+        f"===== 민원 매뉴얼: {manual['title']} =====\n{manual['content']}\n===== 매뉴얼 끝 ====="
+    )
+    messages = [{"role": "system", "content": system}]
+    messages += [{"role": t.role, "content": t.content} for t in payload.messages]
 
     try:
-        import anthropic
+        import openai
+        from openai import OpenAI
 
-        client = anthropic.Anthropic()
-        response = client.messages.create(
+        client = OpenAI()
+        response = client.chat.completions.create(
             model=MODEL,
-            max_tokens=4000,
-            system=SYSTEM_PROMPT,
-            messages=api_messages,
+            messages=messages,
+            temperature=0.2,
         )
-    except anthropic.AuthenticationError:
-        raise HTTPException(status_code=401, detail="Anthropic 인증 실패: API 키를 확인하세요.")
-    except anthropic.APIStatusError as e:  # noqa: PERF203
-        raise HTTPException(status_code=502, detail=f"Claude API 오류: {e.status_code} {e.message}")
+        reply = (response.choices[0].message.content or "").strip()
+    except openai.AuthenticationError:
+        raise HTTPException(status_code=401, detail="OpenAI 인증 실패: API 키를 확인하세요.")
+    except openai.APIStatusError as e:  # noqa: PERF203
+        raise HTTPException(status_code=502, detail=f"OpenAI API 오류: {e.status_code}")
     except Exception as e:  # noqa: BLE001
-        raise HTTPException(status_code=502, detail=f"Claude 호출 실패: {e}") from e
-
-    reply_parts: list[str] = []
-    citations: list[dict] = []
-    for block in response.content:
-        if block.type == "text":
-            reply_parts.append(block.text)
-            for c in getattr(block, "citations", None) or []:
-                citations.append(
-                    {
-                        "cited_text": getattr(c, "cited_text", ""),
-                        "start": getattr(c, "start_char_index", None),
-                        "end": getattr(c, "end_char_index", None),
-                    }
-                )
-
-    reply = "".join(reply_parts).strip()
+        raise HTTPException(status_code=502, detail=f"OpenAI 호출 실패: {e}") from e
 
     # 대화 로그 저장(마지막 사용자 발화 + 응답)
     session_id = f"m{payload.manual_id}"
@@ -176,4 +151,5 @@ def chat(payload: ChatIn) -> dict:
         )
         conn.commit()
 
-    return {"reply": reply, "citations": citations}
+    # OpenAI chat.completions 에는 Claude 같은 네이티브 인용이 없어 citations 는 비움
+    return {"reply": reply, "citations": []}

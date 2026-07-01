@@ -1,6 +1,13 @@
 """공공 직군 행정업무 슈퍼앱 - FastAPI 백엔드 엔트리포인트."""
 
-from contextlib import asynccontextmanager
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# backend/.env 자동 로드 (다른 모듈이 os.getenv 하기 전에 최우선 실행)
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+from contextlib import asynccontextmanager  # noqa: E402
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
