@@ -17,5 +17,6 @@ frontend/dist/
 !.env.example
 .DS_Store
 
-# Claude Code 로컬 설정
-.claude/
+# Claude Code 로컬 설정 (skills 폴더만 공유, 나머지는 무시)
+.claude/*
+!.claude/skills/
