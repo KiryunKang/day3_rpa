@@ -47,7 +47,7 @@ day3_rpa/
 │   └── vite.config.ts        # /api 프록시 설정
 └── backend/                  # FastAPI (uv)
     ├── pyproject.toml
-    ├── main.py               # 실행 진입점 (uv run dev)
+    ├── main.py               # 실행 진입점 (uv run python main.py)
     └── app/
         ├── main.py           # FastAPI 앱, CORS, 라우터 등록, lifespan
         ├── db.py             # SQLite 연결/스키마 초기화

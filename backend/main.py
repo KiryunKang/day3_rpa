@@ -1,4 +1,4 @@
-"""개발 서버 실행 진입점: `uv run main.py` 또는 `uv run dev`."""
+"""개발 서버 실행 진입점: `uv run python main.py`."""
 
 import uvicorn
 

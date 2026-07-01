@@ -71,7 +71,7 @@ $env:ANTHROPIC_API_KEY = "sk-ant-..."   # 또는 backend/.env
 ```bash
 cd backend
 uv sync        # 최초 1회: 의존성 설치
-uv run dev
+uv run python main.py
 # → http://127.0.0.1:8000  (문서: http://127.0.0.1:8000/docs)
 ```
 

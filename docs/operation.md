@@ -36,7 +36,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 ```bash
 cd backend
 uv sync            # 최초 1회: 의존성 설치
-uv run dev         # 개발 서버 → http://127.0.0.1:8000
+uv run python main.py         # 개발 서버 → http://127.0.0.1:8000
 ```
 
 - API 문서(Swagger): http://127.0.0.1:8000/docs
@@ -145,7 +145,7 @@ Get-NetTCPConnection -LocalPort 8000 -State Listen |
 
 ## 6. 점검 체크리스트
 
-- [ ] `uv run dev` 로 백엔드 기동, `/api/health` 200 확인
+- [ ] `uv run python main.py` 로 백엔드 기동, `/api/health` 200 확인
 - [ ] `npm run dev` 로 프론트 기동, 화면 로드 확인
 - [ ] `ANTHROPIC_API_KEY` 설정(챗봇 사용 시)
 - [ ] 각 탭 기본 동작(등록/조회/업로드) 스모크 테스트

@@ -265,7 +265,7 @@
 │       ├── api.ts, types.ts, App.tsx
 │       └── features/      # schedule / excel / chatbot / news / approval
 └── backend/               # FastAPI (uv)
-    ├── main.py            # uv run dev 진입점
+    ├── main.py            # uv run python main.py 진입점
     └── app/
         ├── main.py        # FastAPI 앱, CORS, 라우터, lifespan
         ├── db.py          # SQLite 연결/스키마
@@ -314,7 +314,7 @@
       <h3>백엔드 (터미널 1)</h3>
       <pre><code>cd backend
 uv sync            # 최초 1회
-uv run dev         # → http://127.0.0.1:8000  (문서: /docs)</code></pre>
+uv run python main.py         # → http://127.0.0.1:8000  (문서: /docs)</code></pre>
       <h3>프론트엔드 (터미널 2)</h3>
       <pre><code>cd frontend
 npm install        # 최초 1회
