@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 # backend/.env 자동 로드 (다른 모듈이 os.getenv 하기 전에 최우선 실행)
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
+import os  # noqa: E402
 from contextlib import asynccontextmanager  # noqa: E402
 
 from fastapi import FastAPI, HTTPException
@@ -34,10 +35,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="행정업무 슈퍼앱 API", version="0.1.0", lifespan=lifespan)
 
-# 개발용 CORS 설정 (Vite dev 서버)
+# CORS: 기본은 Vite dev, 배포 오리진은 CORS_ORIGINS(쉼표구분) 환경변수로 추가
+# 예) CORS_ORIGINS="https://kiryunkang.github.io"
+_default_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+_extra_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=_default_origins + _extra_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
