@@ -164,22 +164,14 @@ export const chatbotApi = {
     }),
 }
 
-// ---------- 뉴스 ----------
+// ---------- 뉴스 (대한민국 정책브리핑 날짜별 수집) ----------
 export const newsApi = {
-  list: (keyword?: string) =>
-    request<NewsArticle[]>('/api/news' + (keyword ? `?keyword=${encodeURIComponent(keyword)}` : '')),
-  keywords: () => request<{ keywords: string[] }>('/api/news/keywords'),
-  collect: () =>
-    request<{ scanned: number; inserted: number; errors: string[] }>('/api/news/collect', {
-      method: 'POST',
-    }),
-  addKeyword: (keyword: string) =>
-    request<{ keywords: string[] }>('/api/news/keywords', {
-      method: 'POST',
-      body: JSON.stringify({ keyword }),
-    }),
-  removeKeyword: (keyword: string) =>
-    request<{ keywords: string[] }>(`/api/news/keywords/${encodeURIComponent(keyword)}`, {
-      method: 'DELETE',
-    }),
+  list: (date?: string) =>
+    request<NewsArticle[]>('/api/news' + (date ? `?date=${encodeURIComponent(date)}` : '')),
+  // date 미지정(null) 시 서버가 전날을 수집
+  collect: (date?: string) =>
+    request<{ date: string; scanned: number; inserted: number; errors: string[] }>(
+      '/api/news/collect',
+      { method: 'POST', body: JSON.stringify({ date: date ?? null }) },
+    ),
 }

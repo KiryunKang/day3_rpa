@@ -1,59 +1,101 @@
-"""뉴스 기사 수집 API 라우터 — 공공 행정 관련 뉴스 RSS 수집 (키워드 편집 가능)."""
+"""뉴스 기사 수집 API — 대한민국 정책브리핑(korea.kr) 정책뉴스 날짜별 크롤링."""
 
-from urllib.parse import quote
+import re
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
-import feedparser
+import httpx
+from bs4 import BeautifulSoup
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from app.db import get_connection
 
 router = APIRouter(prefix="/api/news", tags=["news"])
 
-
-def _feed_url(keyword: str) -> str:
-    q = quote(keyword)
-    return f"https://news.google.com/rss/search?q={q}&hl=ko&gl=KR&ceid=KR:ko"
-
-
-def get_keywords() -> list[str]:
-    """DB에 저장된 수집 키워드 목록."""
-    with get_connection() as conn:
-        rows = conn.execute("SELECT keyword FROM news_keywords ORDER BY id").fetchall()
-    return [r[0] for r in rows]
+LIST_URL = "https://www.korea.kr/news/policyNewsList.do"
+BASE = "https://www.korea.kr"
+_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36"
+_KST = ZoneInfo("Asia/Seoul")
+_MAX_PAGES = 30  # 안전 상한 (무한 루프 방지)
 
 
-def collect_news() -> dict:
-    """설정된 키워드별 RSS를 수집해 SQLite에 저장(중복 URL 무시)."""
-    keywords = get_keywords()
-    inserted = 0
+def _yesterday() -> date:
+    """한국 시각 기준 전날 날짜."""
+    return datetime.now(_KST).date() - timedelta(days=1)
+
+
+def _view_url(news_id: str) -> str:
+    return f"{BASE}/news/policyNewsView.do?newsId={news_id}"
+
+
+def _parse_cards(html: str, target: str) -> list[dict]:
+    """리스트 HTML에서 발행일이 target(YYYY-MM-DD)인 정책뉴스 카드만 추출.
+
+    결과 카드는 `span.source`(='YYYY-MM-DD 부처명')를 가진 <li>. 인기/관련 뉴스
+    링크는 span.source가 없어 자연히 제외되고, 발행일 재확인으로 추천기사도 걸러진다.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    items: list[dict] = []
+    for li in soup.find_all("li"):
+        a = li.select_one('a[href*="policyNewsView.do"]')
+        src_el = li.select_one("span.source")
+        if not a or not src_el:
+            continue
+        m = re.search(r"newsId=(\d+)", a.get("href", ""))
+        if not m:
+            continue
+        src_text = " ".join(src_el.get_text(" ", strip=True).split())
+        dm = re.search(r"\d{4}-\d{2}-\d{2}", src_text)
+        published = dm.group(0) if dm else ""
+        if published != target:  # 다른 날짜/추천 기사 방어
+            continue
+        source = src_text.replace(published, "", 1).strip()  # 부처명
+        title_el = li.select_one("span.text strong") or li.select_one("strong")
+        title = " ".join(title_el.get_text(" ", strip=True).split()) if title_el else ""
+        if not title:
+            continue
+        items.append(
+            {"url": _view_url(m.group(1)), "title": title, "source": source, "published": published}
+        )
+    return items
+
+
+def collect_news(target_date: date | None = None) -> dict:
+    """정책브리핑에서 지정 날짜(기본: 전날) 정책뉴스를 수집해 DB 저장(중복 URL 무시)."""
+    target = target_date or _yesterday()
+    d = target.isoformat()
     scanned = 0
+    inserted = 0
     errors: list[str] = []
     with get_connection() as conn:
-        for kw in keywords:
+        for page in range(1, _MAX_PAGES + 1):
             try:
-                feed = feedparser.parse(_feed_url(kw))
+                resp = httpx.get(
+                    LIST_URL,
+                    params={"startDate": d, "endDate": d, "pageIndex": page},
+                    headers={"User-Agent": _UA},
+                    timeout=15,
+                    follow_redirects=True,
+                )
+                resp.encoding = "utf-8"
+                resp.raise_for_status()
             except Exception as e:  # noqa: BLE001
-                errors.append(f"{kw}: {e}")
-                continue
-            for entry in feed.entries:
-                scanned += 1
-                url = getattr(entry, "link", "")
-                title = getattr(entry, "title", "")
-                if not url or not title:
-                    continue
-                source = ""
-                if getattr(entry, "source", None):
-                    source = getattr(entry.source, "title", "")
-                published = getattr(entry, "published", None)
+                errors.append(f"page {page}: {e}")
+                break
+            cards = _parse_cards(resp.text, d)
+            if not cards:  # 해당 날짜 기사 소진 → 종료
+                break
+            scanned += len(cards)
+            for c in cards:
                 cur = conn.execute(
                     "INSERT OR IGNORE INTO news_articles (title, url, source, keyword, published_at) "
                     "VALUES (?, ?, ?, ?, ?)",
-                    (title, url, source, kw, published),
+                    (c["title"], c["url"], c["source"], None, c["published"]),
                 )
                 inserted += cur.rowcount
         conn.commit()
-    return {"scanned": scanned, "inserted": inserted, "keywords": keywords, "errors": errors}
+    return {"date": d, "scanned": scanned, "inserted": inserted, "errors": errors}
 
 
 # ---------- 스키마 ----------
@@ -67,20 +109,20 @@ class Article(BaseModel):
     collected_at: str
 
 
-class KeywordIn(BaseModel):
-    keyword: str = Field(..., min_length=1, max_length=40)
+class CollectIn(BaseModel):
+    date: str | None = None  # YYYY-MM-DD, 미지정 시 전날
 
 
 # ---------- 기사 ----------
 @router.get("", response_model=list[Article])
-def list_news(keyword: str | None = None, limit: int = 100) -> list[dict]:
-    """수집된 기사 목록(최신순). keyword로 필터 가능."""
+def list_news(date: str | None = None, limit: int = 100) -> list[dict]:
+    """수집된 기사 목록(최신순). date(YYYY-MM-DD)로 발행일 필터 가능."""
     with get_connection() as conn:
-        if keyword:
+        if date:
             rows = conn.execute(
                 "SELECT id, title, url, source, keyword, published_at, collected_at "
-                "FROM news_articles WHERE keyword = ? ORDER BY id DESC LIMIT ?",
-                (keyword, limit),
+                "FROM news_articles WHERE published_at = ? ORDER BY id DESC LIMIT ?",
+                (date, limit),
             ).fetchall()
         else:
             rows = conn.execute(
@@ -92,39 +134,12 @@ def list_news(keyword: str | None = None, limit: int = 100) -> list[dict]:
 
 
 @router.post("/collect")
-def collect_now() -> dict:
-    """지금 즉시 수집 실행(수동 크롤링)."""
-    return collect_news()
-
-
-# ---------- 키워드 관리 ----------
-@router.get("/keywords")
-def keywords() -> dict:
-    """수집 대상 키워드 목록."""
-    return {"keywords": get_keywords()}
-
-
-@router.post("/keywords", status_code=201)
-def add_keyword(payload: KeywordIn) -> dict:
-    """수집 키워드 추가."""
-    kw = payload.keyword.strip()
-    if not kw:
-        raise HTTPException(status_code=422, detail="키워드를 입력하세요.")
-    with get_connection() as conn:
-        exists = conn.execute("SELECT 1 FROM news_keywords WHERE keyword = ?", (kw,)).fetchone()
-        if exists:
-            raise HTTPException(status_code=409, detail=f"이미 등록된 키워드입니다: {kw}")
-        conn.execute("INSERT INTO news_keywords (keyword) VALUES (?)", (kw,))
-        conn.commit()
-    return {"keywords": get_keywords()}
-
-
-@router.delete("/keywords/{keyword}")
-def delete_keyword(keyword: str) -> dict:
-    """수집 키워드 삭제(기존 수집 기사는 유지)."""
-    with get_connection() as conn:
-        cur = conn.execute("DELETE FROM news_keywords WHERE keyword = ?", (keyword,))
-        conn.commit()
-        if cur.rowcount == 0:
-            raise HTTPException(status_code=404, detail="키워드를 찾을 수 없습니다.")
-    return {"keywords": get_keywords()}
+def collect_now(payload: CollectIn = CollectIn()) -> dict:
+    """지정 날짜(미지정 시 전날) 정책뉴스를 즉시 수집(수동 크롤링)."""
+    target: date | None = None
+    if payload.date:
+        try:
+            target = date.fromisoformat(payload.date)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="날짜 형식은 YYYY-MM-DD 여야 합니다.")
+    return collect_news(target)

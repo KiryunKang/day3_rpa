@@ -22,7 +22,7 @@
     <td width="50%"><img src="docs/screenshots/chatbot.png" alt="민원 챗봇" /><br/><sub><b>민원 챗봇</b> — 매뉴얼 근거 응대 생성</sub></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/news.png" alt="뉴스 수집" /><br/><sub><b>뉴스 수집</b> — 키워드 기반 RSS 수집</sub></td>
+    <td width="50%"><img src="docs/screenshots/news.png" alt="뉴스 수집" /><br/><sub><b>뉴스 수집</b> — 정책브리핑 날짜별 크롤링</sub></td>
     <td width="50%"><img src="docs/screenshots/approval.png" alt="전자결재" /><br/><sub><b>전자결재</b> — 순차 결재선 기안/승인</sub></td>
   </tr>
 </table>
@@ -34,7 +34,7 @@
 | 📅 팀 스케줄 | 휴가/근무/출장 일정 공유 캘린더 |
 | 📊 엑셀 자동화 | 컬럼 기준 분할 / 다중 파일 병합 |
 | 💬 민원 챗봇 | 매뉴얼 근거 응대 스크립트 생성 (OpenAI GPT) |
-| 📰 뉴스 수집 | 공공행정 뉴스 매일 07:00 자동 수집 (RSS) |
+| 📰 뉴스 수집 | 대한민국 정책브리핑 전날 정책뉴스 매일 09:00 자동 수집 + 날짜 지정 수집 |
 | 📄 전자결재 | 순차 결재선 기반 문서 기안/승인/반려 |
 
 ## 기술 스택
@@ -45,7 +45,7 @@
 | Backend | Python + FastAPI (패키지 관리: **uv**) |
 | Database | SQLite |
 | AI | OpenAI (`gpt-4o-mini`, `OPENAI_MODEL`로 변경 가능) |
-| 부가 | pandas·openpyxl(엑셀), APScheduler(뉴스), feedparser(RSS) |
+| 부가 | pandas·openpyxl(엑셀), APScheduler(뉴스), httpx·BeautifulSoup(정책브리핑 크롤링) |
 
 ## 프로젝트 구조
 
@@ -96,7 +96,7 @@ npm run dev
 | 스케줄 | `GET·POST /api/schedule`, `PUT·DELETE /api/schedule/{id}` |
 | 엑셀 | `POST /api/excel/preview·split·merge`, `GET /api/excel/jobs` |
 | 챗봇 | `GET·POST /api/chatbot/manuals`, `POST /api/chatbot/chat` |
-| 뉴스 | `GET /api/news`, `GET /api/news/keywords`, `POST /api/news/collect` |
+| 뉴스 | `GET /api/news`(`?date=YYYY-MM-DD`), `POST /api/news/collect`(바디 `{date?}`) |
 | 전자결재 | `GET·POST /api/documents`, `POST /api/documents/{id}/approve·reject` |
 
 전체 API 문서: 백엔드 실행 후 http://127.0.0.1:8000/docs

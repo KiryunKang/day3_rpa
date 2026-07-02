@@ -11,9 +11,9 @@
 | Backend | **Python + FastAPI** | 패키지 관리는 **uv** 필수 |
 | Database | **SQLite** | 파일 기반, Python 내장 `sqlite3` |
 | AI | **OpenAI API** (`gpt-4o-mini`, `chat.completions`) | 민원 챗봇 |
-| 스케줄러 | **APScheduler** | 뉴스 매일 아침 수집 |
+| 스케줄러 | **APScheduler** | 매일 09:00 전날 정책뉴스 수집 |
 | 엑셀 | **pandas + openpyxl** | 분할/병합 |
-| 뉴스 수집 | **feedparser / httpx (+ BeautifulSoup)** | RSS·웹 |
+| 뉴스 수집 | **httpx + BeautifulSoup** | 대한민국 정책브리핑(korea.kr) HTML 크롤링 |
 
 ### 개발환경 (확인 완료)
 - Node.js v24.18.0 / npm 11.16.0
@@ -72,11 +72,11 @@ day3_rpa/
 │    / 뉴스 / 결재 화면      │  프록시 │  chatbot/news/documents      │
 └──────────────────────────┘        │                              │
                                      │  ├─ SQLite (app.db)          │
-                                     │  ├─ APScheduler (매일 07:00) │
+                                     │  ├─ APScheduler (매일 09:00) │
                                      │  └─ OpenAI API (gpt-4o-mini) │
                                      └──────────────────────────────┘
                                                 │            │
-                                     외부 뉴스 소스(RSS)     OpenAI API
+                                   정책브리핑(korea.kr)     OpenAI API
 ```
 
 - FE는 정적 자산으로 빌드, DEV에서는 Vite 프록시로 `/api` 요청을 8000 포트 FastAPI에 전달
@@ -118,10 +118,10 @@ day3_rpa/
   - 인용(citations): OpenAI에는 Claude 같은 네이티브 인용이 없어 현재 미제공(빈 배열 반환)
 - 인증: `OPENAI_API_KEY` 환경변수 — `backend/.env`에서 `python-dotenv`로 자동 로드(코드/DB 저장 금지)
 
-### 4.6 `app/news.py` + `app/scheduler.py` — 뉴스 수집
-- `scheduler.py`: APScheduler(`AsyncIOScheduler`) 로 매일 07:00 `collect_news()` 실행
-- `collect_news()`: 설정된 소스(RSS)에서 기사 파싱 → 키워드 필터 → URL 중복 제거 → SQLite 저장
-- 엔드포인트: 기사 목록 조회, 키워드/기간 필터, `POST /api/news/collect`(수동 실행)
+### 4.6 `app/news.py` + `app/scheduler.py` — 뉴스 수집 (정책브리핑)
+- `scheduler.py`: APScheduler(`BackgroundScheduler`, TZ Asia/Seoul)로 매일 09:00 `collect_news()`(전날) 실행
+- `collect_news(target_date=None)`: 대한민국 정책브리핑 `policyNewsList.do`를 `startDate/endDate/pageIndex`로 요청 → `httpx`+`BeautifulSoup`으로 카드 파싱(제목/부처/발행일) → 발행일 재확인(target) → 페이지 순회 → URL(newsId) 중복 제거 → SQLite 저장. 기본 대상은 KST 전날
+- 엔드포인트: `GET /api/news`(`?date=` 발행일 필터), `POST /api/news/collect`(바디 `{date?}`, 미지정 시 전날)
 - (선택) `POST /api/news/brief`: 수집 기사들을 OpenAI로 요약 브리핑
 
 ---
@@ -200,8 +200,8 @@ CREATE TABLE news_articles (
 | 챗봇 | `POST /api/chatbot/manuals` | 매뉴얼 업로드 |
 | | `GET /api/chatbot/manuals` | 매뉴얼 목록 |
 | | `POST /api/chatbot/chat` | 민원 응대 생성(스트리밍) |
-| 뉴스 | `GET /api/news` | 기사 목록(필터: keyword/기간) |
-| | `POST /api/news/collect` | 수동 수집 실행 |
+| 뉴스 | `GET /api/news` | 기사 목록(필터: `date` 발행일) |
+| | `POST /api/news/collect` | 수동 수집(바디 `{date?}`, 미지정 시 전날) |
 | | `POST /api/news/brief` | (선택) AI 요약 브리핑 |
 | 결재 | `GET/POST /api/documents ...` | (기존) 전자결재 |
 
@@ -217,7 +217,7 @@ openai                          # 민원 챗봇 (chat.completions)
 python-dotenv                   # backend/.env 자동 로드
 pandas, openpyxl                # 엑셀 처리
 apscheduler                     # 스케줄링
-httpx, feedparser, beautifulsoup4   # 뉴스 수집
+httpx, beautifulsoup4           # 뉴스 수집(정책브리핑 HTML 크롤링)
 python-multipart                # 파일 업로드(FastAPI)
 pypdf                           # 매뉴얼 PDF 텍스트 추출
 ```

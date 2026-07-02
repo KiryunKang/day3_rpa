@@ -17,7 +17,7 @@
 | Backend | Python + FastAPI (패키지 관리 **uv**) |
 | DB | SQLite (`backend/app.db`, 자동 생성) |
 | AI | **OpenAI** (`gpt-4o-mini`, `chat.completions`) — 민원 챗봇 |
-| 부가 | pandas·openpyxl(엑셀), APScheduler(뉴스), feedparser(RSS), python-dotenv(.env), pypdf(매뉴얼) |
+| 부가 | pandas·openpyxl(엑셀), APScheduler(뉴스), httpx·BeautifulSoup(정책브리핑 크롤링), python-dotenv(.env), pypdf(매뉴얼) |
 
 - 개발환경: Node v24 / npm 11 / uv 0.11(Python 3.14) / Chrome(스크린샷용)
 
@@ -72,7 +72,7 @@ day3_rpa/
 | └ 팀원 관리 | ✅ | `members` CRUD, 담당자 select, 이름변경 시 일정 담당자 동기화 |
 | 엑셀 자동화 | ✅ | 컬럼 기준 분할(시트/ZIP)·병합(헤더검증), 처리 이력 |
 | 민원 챗봇 | ✅ | OpenAI, 매뉴얼(PDF/TXT/MD) 근거 응대, "근거 없음" 고지 |
-| 뉴스 수집 | ✅ | 매일 07:00 자동 + 수동, **키워드 편집(토글)**, 새로고침, 발행일 메인 표기 |
+| 뉴스 수집 | ✅ | **대한민국 정책브리핑(korea.kr)** 크롤링, 매일 09:00 전날 자동 + **날짜 지정 수집**, 발행일·부처 표기 |
 | 전자결재 | ✅ | 순차 결재선 기안/승인/반려 |
 | 시스템 상태 | ✅ | `/api/status`(BE↔DB) + 헤더 연결 배지(FE↔BE) |
 
@@ -85,7 +85,7 @@ day3_rpa/
 - 팀원: `GET/POST /api/members`, `PUT/DELETE /api/members/{id}`
 - 엑셀: `POST /api/excel/preview·split·merge`, `GET /api/excel/jobs`
 - 챗봇: `GET/POST /api/chatbot/manuals`, `POST /api/chatbot/chat`
-- 뉴스: `GET /api/news`, `GET/POST /api/news/keywords`, `DELETE /api/news/keywords/{kw}`, `POST /api/news/collect`
+- 뉴스: `GET /api/news`(`?date=YYYY-MM-DD`), `POST /api/news/collect`(바디 `{date?}`, 미지정 시 전날)
 - 결재: `GET/POST /api/documents`, `POST /api/documents/{id}/approve·reject`
 - 상태: `GET /api/health`, `GET /api/status`
 

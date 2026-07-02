@@ -1,4 +1,4 @@
-"""APScheduler 설정 — 매일 아침 뉴스 자동 수집."""
+"""APScheduler 설정 — 매일 09:00 전날 정책뉴스(korea.kr) 자동 수집."""
 
 import logging
 
@@ -13,25 +13,25 @@ _scheduler: BackgroundScheduler | None = None
 
 
 def _job() -> None:
-    logger.info("뉴스 자동 수집 시작")
-    result = collect_news()
-    logger.info("뉴스 자동 수집 완료: %s", result)
+    logger.info("전날 정책뉴스 자동 수집 시작")
+    result = collect_news()  # 인자 없음 = 전날(KST)
+    logger.info("전날 정책뉴스 자동 수집 완료: %s", result)
 
 
 def start_scheduler() -> None:
-    """앱 시작 시 스케줄러 기동 — 매일 07:00 뉴스 수집."""
+    """앱 시작 시 스케줄러 기동 — 매일 09:00 전날 정책뉴스 수집."""
     global _scheduler
     if _scheduler is not None:
         return
     _scheduler = BackgroundScheduler(timezone="Asia/Seoul")
     _scheduler.add_job(
         _job,
-        trigger=CronTrigger(hour=7, minute=0),
+        trigger=CronTrigger(hour=9, minute=0),
         id="daily_news_collect",
         replace_existing=True,
     )
     _scheduler.start()
-    logger.info("스케줄러 기동: 매일 07:00 뉴스 수집")
+    logger.info("스케줄러 기동: 매일 09:00 전날 정책뉴스 수집")
 
 
 def shutdown_scheduler() -> None:
