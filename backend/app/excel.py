@@ -3,6 +3,7 @@
 import io
 import re
 import zipfile
+from urllib.parse import quote
 
 import pandas as pd
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
@@ -27,6 +28,13 @@ def _read_excel(upload: UploadFile) -> pd.DataFrame:
         return pd.read_excel(io.BytesIO(data), engine="openpyxl")
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=422, detail=f"엑셀을 읽을 수 없습니다: {e}") from e
+
+
+def _content_disposition(filename: str) -> str:
+    """한글 등 non-ASCII 파일명을 RFC 5987로 인코딩(헤더는 latin-1만 허용)."""
+    ascii_name = filename.encode("ascii", "ignore").decode() or "download.xlsx"
+    quoted = quote(filename)
+    return f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quoted}"
 
 
 def _safe_sheet_name(value: str) -> str:
@@ -86,7 +94,7 @@ def split(
         return StreamingResponse(
             buf,
             media_type="application/zip",
-            headers={"Content-Disposition": f'attachment; filename="{base}_split.zip"'},
+            headers={"Content-Disposition": _content_disposition(f"{base}_split.zip")},
         )
 
     # 단일 파일, 값별 시트
@@ -106,7 +114,7 @@ def split(
     return StreamingResponse(
         buf,
         media_type=XLSX_MIME,
-        headers={"Content-Disposition": f'attachment; filename="{base}_split.xlsx"'},
+        headers={"Content-Disposition": _content_disposition(f"{base}_split.xlsx")},
     )
 
 
@@ -142,7 +150,7 @@ def merge(files: list[UploadFile] = File(...)) -> StreamingResponse:
     return StreamingResponse(
         buf,
         media_type=XLSX_MIME,
-        headers={"Content-Disposition": 'attachment; filename="merged.xlsx"'},
+        headers={"Content-Disposition": _content_disposition("merged.xlsx")},
     )
 
 
