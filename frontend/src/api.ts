@@ -11,11 +11,10 @@ import type {
   SystemStatus,
 } from './types'
 
-// 배포 시 백엔드 주소(예: https://api.example.com). 개발/프록시 환경은 빈 문자열 → 상대경로.
-const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '')
+import { getApiBase } from './config'
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(API_BASE + url, {
+  const res = await fetch(getApiBase() + url, {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   })
@@ -104,7 +103,7 @@ export const scheduleApi = {
   update: (id: number, body: Omit<ScheduleEvent, 'id' | 'created_at'>) =>
     request<ScheduleEvent>(`/api/schedule/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   remove: (id: number) =>
-    fetch(`${API_BASE}/api/schedule/${id}`, { method: 'DELETE' }).then(async (r) => {
+    fetch(`${getApiBase()}/api/schedule/${id}`, { method: 'DELETE' }).then(async (r) => {
       if (!r.ok) throw new Error(await errorMessage(r))
     }),
 }
@@ -117,7 +116,7 @@ export const memberApi = {
   update: (id: number, body: { name: string; team: string; role: string }) =>
     request<Member>(`/api/members/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   remove: (id: number) =>
-    fetch(`${API_BASE}/api/members/${id}`, { method: 'DELETE' }).then(async (r) => {
+    fetch(`${getApiBase()}/api/members/${id}`, { method: 'DELETE' }).then(async (r) => {
       if (!r.ok) throw new Error(await errorMessage(r))
     }),
 }
@@ -127,7 +126,7 @@ export const excelApi = {
   preview: (file: File) => {
     const fd = new FormData()
     fd.append('file', file)
-    return fetch(`${API_BASE}/api/excel/preview`, { method: 'POST', body: fd }).then(async (r) => {
+    return fetch(`${getApiBase()}/api/excel/preview`, { method: 'POST', body: fd }).then(async (r) => {
       if (!r.ok) throw new Error(await errorMessage(r))
       return r.json() as Promise<ExcelPreview>
     })
@@ -137,13 +136,13 @@ export const excelApi = {
     fd.append('file', file)
     fd.append('key_column', keyColumn)
     fd.append('output', output)
-    const res = await fetch(`${API_BASE}/api/excel/split`, { method: 'POST', body: fd })
+    const res = await fetch(`${getApiBase()}/api/excel/split`, { method: 'POST', body: fd })
     await downloadResponse(res, output === 'zip' ? 'split.zip' : 'split.xlsx')
   },
   merge: async (files: File[]) => {
     const fd = new FormData()
     files.forEach((f) => fd.append('files', f))
-    const res = await fetch(`${API_BASE}/api/excel/merge`, { method: 'POST', body: fd })
+    const res = await fetch(`${getApiBase()}/api/excel/merge`, { method: 'POST', body: fd })
     await downloadResponse(res, 'merged.xlsx')
   },
 }
@@ -155,7 +154,7 @@ export const chatbotApi = {
     const fd = new FormData()
     fd.append('file', file)
     fd.append('title', title)
-    return fetch(`${API_BASE}/api/chatbot/manuals`, { method: 'POST', body: fd }).then(async (r) => {
+    return fetch(`${getApiBase()}/api/chatbot/manuals`, { method: 'POST', body: fd }).then(async (r) => {
       if (!r.ok) throw new Error(await errorMessage(r))
       return r.json() as Promise<Manual>
     })
